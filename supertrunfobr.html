@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Super Trunfo BR - 2 Jogadores: Duelo de Atributos!</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0a1628 0%, #060e1f 100%);
+            font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 64px;
+            backdrop-filter: blur(4px);
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,215,0,0.3);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            background: #000000aa;
+            border-radius: 60px;
+            padding: 12px 28px;
+            margin-bottom: 28px;
+            color: #ffd966;
+            font-weight: bold;
+            font-size: 1.2rem;
+            backdrop-filter: blur(8px);
+            border: 1px solid #ffcc44;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .score, .round-info, .message-area, .timer-info, .turn-indicator {
+            background: #1a1a2eaa;
+            padding: 5px 16px;
+            border-radius: 40px;
+        }
+
+        .turn-indicator {
+            background: #2c1e0faa;
+            color: #ffaa33;
+            font-weight: bold;
+        }
+
+        .timer-info {
+            background: #1a2a3eaa;
+            color: #88ccff;
+            font-family: monospace;
+        }
+
+        .message-area {
+            flex-grow: 1;
+            text-align: center;
+            color: #f0f0f0;
+            background: #00000099;
+        }
+
+        .cards-duel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            margin-bottom: 35px;
+        }
+
+        .card {
+            flex: 1;
+            min-width: 280px;
+            background: linear-gradient(135deg, #1e2a3a 0%, #0f1722 100%);
+            border-radius: 48px;
+            padding: 20px 18px;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease;
+            border: 3px solid #ffcc44;
+            position: relative;
+        }
+
+        .card.player1-card {
+            border-color: #ffaa33;
+            box-shadow: 0 0 0 2px #ffd966, 0 20px 30px black;
+        }
+
+        .card.player2-card {
+            border-color: #44aaff;
+            box-shadow: 0 0 0 2px #88ccff, 0 20px 30px black;
+        }
+
+        .card-header {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: #000000cc;
+            display: inline-block;
+            width: 100%;
+            border-radius: 60px;
+            padding: 8px;
+            margin-bottom: 20px;
+            color: #ffdd99;
+            letter-spacing: 1px;
+        }
+
+        .car-name {
+            font-size: 1.6rem;
+            font-weight: 800;
+            text-align: center;
+            background: #0a0f1f;
+            color: #ffcc44;
+            padding: 8px;
+            border-radius: 40px;
+            margin: 12px 0;
+            font-family: monospace;
+        }
+
+        .car-image {
+            font-size: 4rem;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .stats {
+            margin: 20px 0;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            background: #0f172ad9;
+            margin: 10px 0;
+            padding: 12px 18px;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            backdrop-filter: blur(2px);
+            border: 1px solid #ffcc4466;
+            transition: all 0.2s;
+        }
+
+        .stat-clickable {
+            cursor: pointer;
+        }
+
+        .stat-clickable:hover {
+            background: #1e2a4ad9;
+            transform: scale(1.01);
+            border-color: #ffaa66;
+        }
+
+        .stat-hidden {
+            background: #0a0e1ae6;
+            border: 1px dashed #ffaa3355;
+        }
+
+        .stat-hidden .stat-value {
+            filter: blur(6px);
+            background: #00000055;
+            padding: 0 8px;
+            border-radius: 20px;
+        }
+
+        .stat-visible {
+            background: #2a5a3edd;
+            border: 2px solid #ffdd88;
+            box-shadow: 0 0 10px #ffaa44;
+        }
+
+        .stat-visible .stat-value {
+            filter: none;
+            color: #ffffaa;
+            font-weight: 900;
+        }
+
+        .stat-revealed-temp {
+            background: #3a6a8edd;
+            border: 2px solid #88ddff;
+            box-shadow: 0 0 10px #88aaff;
+            animation: reveal-pulse 0.3s ease;
+        }
+
+        .stat-revealed-temp .stat-value {
+            filter: none;
+            color: #ccffff;
+            font-weight: 900;
+        }
+
+        @keyframes reveal-pulse {
+            0% { transform: scale(0.98); }
+            100% { transform: scale(1); }
+        }
+
+        .stat.selected-highlight {
+            background: #ff8c33cc;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 15px #ffaa44;
+        }
+
+        .stat-name {
+            text-transform: uppercase;
+            font-weight: 800;
+            color: #bbaa77;
+        }
+
+        .stat-value {
+            font-family: monospace;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #ffdd99;
+        }
+
+        .vs-div {
+            font-size: 3rem;
+            font-weight: 900;
+            background: rgba(0,0,0,0.7);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-self: center;
+            color: red;
+            text-shadow: 2px 2px 0 yellow;
+            margin: 0 auto;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        button {
+            background: #ffb347;
+            border: none;
+            padding: 12px 32px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.1s;
+            font-family: inherit;
+            box-shadow: 0 5px 0 #a05e15;
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #a05e15;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        .reset-btn {
+            background: #2c3e66;
+            color: white;
+            box-shadow: 0 5px 0 #141e33;
+        }
+
+        .choice-panel {
+            text-align: center;
+            background: #000000aa;
+            padding: 12px;
+            border-radius: 60px;
+            margin-top: 20px;
+            color: white;
+            font-weight: bold;
+        }
+
+        footer {
+            text-align: center;
+            color: #aaaacc;
+            margin-top: 20px;
+            font-size: 0.8rem;
+        }
+
+        .waiting-turn {
+            animation: pulse-wait 1.5s infinite;
+        }
+
+        @keyframes pulse-wait {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; text-shadow: 0 0 5px #ffaa44; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="status-bar">
+        <div class="score">👤 Jogador 1: <span id="player1-score">0</span></div>
+        <div class="score">👥 Jogador 2: <span id="player2-score">0</span></div>
+        <div class="round-info">🔁 Rodada: <span id="round-count">1</span></div>
+        <div class="turn-indicator" id="turn-indicator">🎲 VEZ: JOGADOR 1</div>
+        <div class="timer-info">⏱️ Revelação: <span id="reveal-timer">0</span>s</div>
+        <div class="message-area" id="game-message">🎮 Jogador 1: escolha um atributo clicando na sua carta!</div>
+    </div>
+
+    <div class="cards-duel">
+        <div class="card player1-card" id="player1Card">
+            <div class="card-header">👤 JOGADOR 1</div>
+            <div class="car-image" id="player1Img">🏎️</div>
+            <div class="car-name" id="player1Name">Carregando...</div>
+            <div class="stats" id="player1Stats"></div>
+        </div>
+
+        <div class="vs-div">⚔️ VS ⚔️</div>
+
+        <div class="card player2-card" id="player2Card">
+            <div class="card-header">👥 JOGADOR 2</div>
+            <div class="car-image" id="player2Img">🚗</div>
+            <div class="car-name" id="player2Name">Carregando...</div>
+            <div class="stats" id="player2Stats"></div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button id="playBtn" disabled>⚡ DISPUTAR ATRIBUTO</button>
+        <button id="resetBtn" class="reset-btn">🔄 NOVO JOGO</button>
+    </div>
+    <div class="choice-panel" id="choiceInfo">
+        🎯 <strong>MODO 2 JOGADORES:</strong> Alternadamente, cada jogador escolhe o atributo para duelar!<br>
+        📊 Após o duelo, o atributo escolhido de AMBAS as cartas é revelado por 20 segundos!<br>
+        👑 Quem ficar sem cartas primeiro PERDE! Vença todas as cartas do oponente!
+    </div>
+    <footer>🇧🇷 Super Trunfo BR - Duelo entre amigos! Um escolhe, depois o outro, alternadamente!</footer>
+</div>
+
+<script>
+    // BASE DE CARROS BRASILEIROS
+    const CARS = [
+        { nome: "Chevrolet Opala SS 6cc", imagem: "🚘", torque: 38.7, zeroCem: 10.2, potencia: 171, velocidadeMaxima: 185 },
+        { nome: "VW Gol GTI 16V", imagem: "🏎️", torque: 16.8, zeroCem: 8.9, potencia: 150, velocidadeMaxima: 201 },
+        { nome: "Fiat Uno Turbo IE", imagem: "🚗", torque: 18.5, zeroCem: 7.8, potencia: 118, velocidadeMaxima: 195 },
+        { nome: "Chevrolet Astra GSi", imagem: "🚙", torque: 19.7, zeroCem: 9.4, potencia: 128, velocidadeMaxima: 198 },
+        { nome: "Ford Maverick GT V8", imagem: "🐎", torque: 42.5, zeroCem: 9.1, potencia: 197, velocidadeMaxima: 192 },
+        { nome: "Peugeot 206 RC (BR)", imagem: "🐱", torque: 20.4, zeroCem: 7.4, potencia: 138, velocidadeMaxima: 210 },
+        { nome: "Renault Sandero RS", imagem: "⚡", torque: 20.9, zeroCem: 8.0, potencia: 150, velocidadeMaxima: 202 },
+        { nome: "Honda Civic Si (G8 BR)", imagem: "🏁", torque: 17.7, zeroCem: 8.1, potencia: 155, velocidadeMaxima: 210 },
+        { nome: "Chevrolet Cruze SS 2019", imagem: "💨", torque: 28.9, zeroCem: 7.1, potencia: 195, velocidadeMaxima: 236 },
+        { nome: "VW Virtus GTS", imagem: "🔥", torque: 25.5, zeroCem: 7.2, potencia: 150, velocidadeMaxima: 225 },
+        { nome: "Fiat Fastback Abarth", imagem: "🐆", torque: 27.5, zeroCem: 7.6, potencia: 185, velocidadeMaxima: 220 },
+        { nome: "Chevrolet Onix Turbo RS", imagem: "⚙️", torque: 21.4, zeroCem: 8.3, potencia: 116, velocidadeMaxima: 192 }
+    ];
+
+    const ATTRIBUTES = [
+        { id: "torque", label: "🔧 TORQUE (kgfm)", better: "higher", shortLabel: "TORQUE" },
+        { id: "zeroCem", label: "⏱️ 0-100 km/h (s)", better: "lower", shortLabel: "0-100" },
+        { id: "potencia", label: "⚙️ POTÊNCIA (cv)", better: "higher", shortLabel: "POTÊNCIA" },
+        { id: "velocidadeMaxima", label: "💨 VEL. MÁXIMA (km/h)", better: "higher", shortLabel: "VEL.MAX" }
+    ];
+
+    let player1Hand = [];
+    let player2Hand = [];
+    let player1Score = 0;
+    let player2Score = 0;
+    let round = 1;
+    let gameActive = true;
+    let currentPlayer1Card = null;
+    let currentPlayer2Card = null;
+    let selectedAttributeId = null;
+    let roundResolved = false;
+    let waitingForChoice = true;
+    let currentTurn = 1; // 1 = Jogador 1, 2 = Jogador 2
+    let revealTimerInterval = null;
+    let isRevealing = false;
+    let revealEndTime = 0;
+
+    // Elementos
+    const player1NameSpan = document.getElementById("player1Name");
+    const player2NameSpan = document.getElementById("player2Name");
+    const player1StatsDiv = document.getElementById("player1Stats");
+    const player2StatsDiv = document.getElementById("player2Stats");
+    const player1ScoreSpan = document.getElementById("player1-score");
+    const player2ScoreSpan = document.getElementById("player2-score");
+    const roundCountSpan = document.getElementById("round-count");
+    const gameMessageSpan = document.getElementById("game-message");
+    const playBtn = document.getElementById("playBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const player1ImgSpan = document.getElementById("player1Img");
+    const player2ImgSpan = document.getElementById("player2Img");
+    const revealTimerSpan = document.getElementById("reveal-timer");
+    const turnIndicatorSpan = document.getElementById("turn-indicator");
+
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function formatValue(attrId, value) {
+        if (attrId === "zeroCem") return value.toFixed(1) + " s";
+        if (attrId === "torque") return value.toFixed(1) + " kgfm";
+        if (attrId === "potencia") return Math.round(value) + " cv";
+        if (attrId === "velocidadeMaxima") return Math.round(value) + " km/h";
+        return value;
+    }
+
+    function renderPlayerCard(card, statsDiv, nameSpan, imgSpan, isCurrentPlayer) {
+        if (!card) return;
+        nameSpan.innerText = card.nome;
+        imgSpan.innerText = card.imagem || "🚗";
+        statsDiv.innerHTML = "";
+        
+        ATTRIBUTES.forEach(attr => {
+            const statDiv = document.createElement("div");
+            statDiv.className = "stat stat-hidden";
+            statDiv.setAttribute("data-attr", attr.id);
+            statDiv.innerHTML = `<span class="stat-name">${attr.label}</span><span class="stat-value">●●●●●</span>`;
+            
+            if (isCurrentPlayer && gameActive && !roundResolved && !isRevealing && waitingForChoice && currentTurn === (statsDiv === player1StatsDiv ? 1 : 2)) {
+                statDiv.classList.add("stat-clickable");
+                const playerNum = statsDiv === player1StatsDiv ? 1 : 2;
+                statDiv.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    handlePlayerAttributeClick(attr.id, playerNum);
+                });
+            }
+            statsDiv.appendChild(statDiv);
+        });
+    }
+
+    function renderBothCards() {
+        const isPlayer1Turn = (currentTurn === 1);
+        renderPlayerCard(currentPlayer1Card, player1StatsDiv, player1NameSpan, player1ImgSpan, isPlayer1Turn && !isRevealing);
+        renderPlayerCard(currentPlayer2Card, player2StatsDiv, player2NameSpan, player2ImgSpan, !isPlayer1Turn && !isRevealing);
+    }
+
+    function revealBothAttributes(attrId) {
+        const player1Stats = document.querySelectorAll("#player1Stats .stat");
+        player1Stats.forEach(stat => {
+            const statAttr = stat.getAttribute("data-attr");
+            if (statAttr === attrId) {
+                const value = currentPlayer1Card[attrId];
+                const valueSpan = stat.querySelector(".stat-value");
+                if (valueSpan) {
+                    valueSpan.innerText = formatValue(attrId, value);
+                    valueSpan.style.filter = "none";
+                }
+                stat.classList.remove("stat-hidden");
+                stat.classList.add("stat-revealed-temp");
+            }
+        });
+        
+        const player2Stats = document.querySelectorAll("#player2Stats .stat");
+        player2Stats.forEach(stat => {
+            const statAttr = stat.getAttribute("data-attr");
+            if (statAttr === attrId) {
+                const value = currentPlayer2Card[attrId];
+                const valueSpan = stat.querySelector(".stat-value");
+                if (valueSpan) {
+                    valueSpan.innerText = formatValue(attrId, value);
+                    valueSpan.style.filter = "none";
+                }
+                stat.classList.remove("stat-hidden");
+                stat.classList.add("stat-revealed-temp");
+            }
+        });
+    }
+
+    function hideBothAttributes(attrId) {
+        const player1Stats = document.querySelectorAll("#player1Stats .stat");
+        player1Stats.forEach(stat => {
+            const statAttr = stat.getAttribute("data-attr");
+            if (statAttr === attrId) {
+                const valueSpan = stat.querySelector(".stat-value");
+                if (valueSpan) {
+                    valueSpan.innerText = "●●●●●";
+                    valueSpan.style.filter = "blur(6px)";
+                }
+                stat.classList.add("stat-hidden");
+                stat.classList.remove("stat-revealed-temp");
+            }
+        });
+        
+        const player2Stats = document.querySelectorAll("#player2Stats .stat");
+        player2Stats.forEach(stat => {
+            const statAttr = stat.getAttribute("data-attr");
+            if (statAttr === attrId) {
+                const valueSpan = stat.querySelector(".stat-value");
+                if (valueSpan) {
+                    valueSpan.innerText = "●●●●●";
+                    valueSpan.style.filter = "blur(6px)";
+                }
+                stat.classList.add("stat-hidden");
+                stat.classList.remove("stat-revealed-temp");
+            }
+        });
+    }
+
+    function startRevealTimer(attrId) {
+        if (revealTimerInterval) clearInterval(revealTimerInterval);
+        isRevealing = true;
+        revealEndTime = Date.now() + 20000;
+        updateTimerDisplay();
+        revealTimerInterval = setInterval(() => {
+            const remaining = revealEndTime - Date.now();
+            if (remaining <= 0) {
+                clearInterval(revealTimerInterval);
+                revealTimerInterval = null;
+                isRevealing = false;
+                revealTimerSpan.innerText = "0";
+                hideBothAttributes(attrId);
+                gameMessageSpan.innerHTML = "🔒 Atributos ocultados novamente!";
+                waitingForChoice = true;
+                if (gameActive && !roundResolved && player1Hand.length > 0 && player2Hand.length > 0) {
+                    advanceToNextRound();
+                } else {
+                    checkGameOver();
+                }
+            } else {
+                const seconds = Math.ceil(remaining / 1000);
+                revealTimerSpan.innerText = seconds;
+            }
+        }, 200);
+    }
+
+    function updateTimerDisplay() {
+        const remaining = revealEndTime - Date.now();
+        revealTimerSpan.innerText = remaining > 0 ? Math.ceil(remaining / 1000) : "0";
+    }
+
+    function cancelTimer() {
+        if (revealTimerInterval) {
+            clearInterval(revealTimerInterval);
+            revealTimerInterval = null;
+        }
+        isRevealing = false;
+        revealTimerSpan.innerText = "0";
+    }
+
+    function handlePlayerAttributeClick(attrId, playerNum) {
+        if (currentTurn !== playerNum) {
+            gameMessageSpan.innerHTML = `⏳ Aguarde! É a vez do Jogador ${currentTurn} escolher.`;
+            return;
+        }
+        if (!gameActive || roundResolved || !waitingForChoice || isRevealing) {
+            gameMessageSpan.innerHTML = "⛔ Não é momento de escolher agora!";
+            return;
+        }
+        if (player1Hand.length === 0 || player2Hand.length === 0) {
+            checkGameOver();
+            return;
+        }
+        
+        selectedAttributeId = attrId;
+        const attrLabel = ATTRIBUTES.find(a => a.id === attrId).shortLabel;
+        gameMessageSpan.innerHTML = `✅ Jogador ${playerNum} escolheu: ${attrLabel}! Clique em DISPUTAR.`;
+        playBtn.disabled = false;
+    }
+
+    function resolveDuel() {
+        if (!selectedAttributeId) {
+            gameMessageSpan.innerHTML = `Jogador ${currentTurn}, escolha um atributo clicando na sua carta!`;
+            return;
+        }
+        if (roundResolved) return;
+        if (!gameActive) return;
+        if (isRevealing) {
+            gameMessageSpan.innerHTML = "Aguardando fim da revelação...";
+            return;
+        }
+        if (player1Hand.length === 0 || player2Hand.length === 0) {
+            checkGameOver();
+            return;
+        }
+
+        const attrDef = ATTRIBUTES.find(a => a.id === selectedAttributeId);
+        const player1Val = currentPlayer1Card[selectedAttributeId];
+        const player2Val = currentPlayer2Card[selectedAttributeId];
+        
+        revealBothAttributes(selectedAttributeId);
+        startRevealTimer(selectedAttributeId);
+        
+        let player1Wins = false;
+        if (attrDef.better === "higher") {
+            player1Wins = player1Val > player2Val;
+        } else {
+            player1Wins = player1Val < player2Val;
+        }
+        
+        let resultMsg = "";
+        if (player1Wins) {
+            player1Hand.push(currentPlayer1Card, currentPlayer2Card);
+            player1Hand.shift();
+            player2Hand.shift();
+            player1Score++;
+            resultMsg = `🏆 JOGADOR 1 VENCEU! ${attrDef.shortLabel}: ${formatValue(selectedAttributeId, player1Val)} vs ${formatValue(selectedAttributeId, player2Val)}`;
+        } else if (player1Val === player2Val) {
+            player1Hand.push(currentPlayer1Card);
+            player2Hand.push(currentPlayer2Card);
+            player1Hand.shift();
+            player2Hand.shift();
+            resultMsg = `🤝 EMPATE! ${attrDef.shortLabel}: ${formatValue(selectedAttributeId, player1Val)} igual a ${formatValue(selectedAttributeId, player2Val)}`;
+        } else {
+            player2Hand.push(currentPlayer1Card, currentPlayer2Card);
+            player1Hand.shift();
+            player2Hand.shift();
+            player2Score++;
+            resultMsg = `👑 JOGADOR 2 VENCEU! ${attrDef.shortLabel}: ${formatValue(selectedAttributeId, player2Val)} vs ${formatValue(selectedAttributeId, player1Val)}`;
+        }
+        
+        gameMessageSpan.innerHTML = resultMsg + " Atributos visíveis por 20s!";
+        updateScoresUI();
+        roundResolved = true;
+        waitingForChoice = false;
+        playBtn.disabled = true;
+        
+        const ended = checkGameOver();
+        if (ended) {
+            cancelTimer();
+            return;
+        }
+        
+        if (revealTimerInterval) clearInterval(revealTimerInterval);
+        revealEndTime = Date.now() + 20000;
+        updateTimerDisplay();
+        revealTimerInterval = setInterval(() => {
+            const remaining = revealEndTime - Date.now();
+            if (remaining <= 0) {
+                clearInterval(revealTimerInterval);
+                revealTimerInterval = null;
+                isRevealing = false;
+                revealTimerSpan.innerText = "0";
+                hideBothAttributes(selectedAttributeId);
+                if (gameActive && player1Hand.length > 0 && player2Hand.length > 0) {
+                    advanceToNextRound();
+                } else {
+                    renderBothCards();
+                    checkGameOver();
+                }
+            } else {
+                revealTimerSpan.innerText = Math.ceil(remaining / 1000);
+            }
+        }, 200);
+    }
+    
+    function advanceToNextRound() {
+        if (!gameActive) return;
+        round++;
+        updateRoundUI();
+        
+        currentPlayer1Card = player1Hand[0];
+        currentPlayer2Card = player2Hand[0];
+        
+        // Alterna turno
+        currentTurn = (currentTurn === 1) ? 2 : 1;
+        turnIndicatorSpan.innerHTML = currentTurn === 1 ? "🎲 VEZ: JOGADOR 1" : "🎲 VEZ: JOGADOR 2";
+        
+        selectedAttributeId = null;
+        roundResolved = false;
+        waitingForChoice = true;
+        playBtn.disabled = true;
+        
+        renderBothCards();
+        
+        gameMessageSpan.innerHTML = `🔁 RODADA ${round} - Jogador ${currentTurn}, escolha um atributo clicando na sua carta!`;
+    }
+    
+    function checkGameOver() {
+        if (player1Hand.length === 0 && player2Hand.length === 0) {
+            gameMessageSpan.innerHTML = "🏁 FIM! EMPATE TOTAL!";
+            endGame();
+            return true;
+        } else if (player1Hand.length === 0) {
+            gameMessageSpan.innerHTML = "👑 JOGADOR 2 VENCEU O JOGO! Jogador 1 ficou sem cartas!";
+            endGame();
+            return true;
+        } else if (player2Hand.length === 0) {
+            gameMessageSpan.innerHTML = "🏆 JOGADOR 1 VENCEU O JOGO! Jogador 2 ficou sem cartas!";
+            endGame();
+            return true;
+        }
+        return false;
+    }
+    
+    function endGame() {
+        gameActive = false;
+        waitingForChoice = false;
+        roundResolved = true;
+        playBtn.disabled = true;
+        cancelTimer();
+    }
+    
+    function updateScoresUI() {
+        player1ScoreSpan.innerText = player1Score;
+        player2ScoreSpan.innerText = player2Score;
+    }
+    
+    function updateRoundUI() {
+        roundCountSpan.innerText = round;
+    }
+    
+    function resetGame() {
+        cancelTimer();
+        const allCards = [...CARS];
+        shuffleArray(allCards);
+        const half = Math.floor(allCards.length / 2);
+        player1Hand = allCards.slice(0, half);
+        player2Hand = allCards.slice(half, allCards.length);
+        player1Score = 0;
+        player2Score = 0;
+        round = 1;
+        selectedAttributeId = null;
+        roundResolved = false;
+        waitingForChoice = true;
+        gameActive = true;
+        isRevealing = false;
+        currentTurn = 1;
+        
+        updateScoresUI();
+        updateRoundUI();
+        playBtn.disabled = true;
+        turnIndicatorSpan.innerHTML = "🎲 VEZ: JOGADOR 1";
+        
+        currentPlayer1Card = player1Hand[0];
+        currentPlayer2Card = player2Hand[0];
+        renderBothCards();
+        
+        gameMessageSpan.innerHTML = "✨ NOVO JOGO! Rodada 1 - Jogador 1, escolha um atributo clicando na sua carta!";
+    }
+    
+    playBtn.addEventListener("click", () => {
+        if (!gameActive) {
+            gameMessageSpan.innerHTML = "Jogo acabou! Clique em NOVO JOGO.";
+            return;
+        }
+        if (roundResolved) {
+            gameMessageSpan.innerHTML = "Aguarde, rodada em andamento...";
+            return;
+        }
+        if (isRevealing) {
+            gameMessageSpan.innerHTML = "Aguardando fim da revelação...";
+            return;
+        }
+        if (!selectedAttributeId) {
+            gameMessageSpan.innerHTML = `Jogador ${currentTurn}, clique em um atributo da SUA carta!`;
+            return;
+        }
+        resolveDuel();
+    });
+    
+    resetBtn.addEventListener("click", () => {
+        resetGame();
+    });
+    
+    resetGame();
+</script>
+</body>
+</html>
